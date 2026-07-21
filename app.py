@@ -41,20 +41,14 @@ def download_video():
 
     if format_type == "mp3":
         ydl_opts['format'] = 'bestaudio/best'
-        ydl_opts['postprocessors'] = [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }]
     else:
-        ydl_opts['format'] = 'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+        # Use single pre-merged stream format to prevent FFmpeg format errors
+        ydl_opts['format'] = 'best[ext=mp4]/best'
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
-            if format_type == "mp3":
-                filename = os.path.splitext(filename)[0] + ".mp3"
 
         base_name = os.path.basename(filename)
         return jsonify({"status": "success", "filename": base_name})
