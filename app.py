@@ -1,23 +1,20 @@
 import os
 import sys
-import uuid
 import pathlib
-import webview
-import threading
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
 import yt_dlp
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# Automatically targets your official Windows Downloads folder (e.g. C:\Users\jayden\Downloads)
-DOWNLOAD_DIR = str(pathlib.Path.home() / "Downloads")
+# Temp download directory for cloud server
+DOWNLOAD_DIR = "/tmp/downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def get_resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+@app.route("/")
+def index():
+    return send_from_directory('.', 'index.html')
 
 @app.route("/api/download", methods=["POST"])
 def download_video():
@@ -28,9 +25,9 @@ def download_video():
     if not url:
         return jsonify({"error": "Please enter a YouTube link"}), 400
 
+    output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+
     if format_type == "mp3":
-        # Save directly using video title as filename
-        output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': output_template,
@@ -42,7 +39,6 @@ def download_video():
             }],
         }
     else:
-        output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
         ydl_opts = {
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'outtmpl': output_template,
@@ -60,22 +56,5 @@ def download_video():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def run_flask():
-    app.run(host="127.0.0.1", port=5000)
-
 if __name__ == "__main__":
-    t = threading.Thread(target=run_flask)
-    t.daemon = True
-    t.start()
-    
-    html_path = get_resource_path("index.html")
-    
-    window = webview.create_window(
-        'YT Stream Master', 
-        html_path, 
-        width=1000, 
-        height=750, 
-        resizable=True
-    )
-    
-    webview.start()
+    app.run(host="0.0.0.0", port=5000)
