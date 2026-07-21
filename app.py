@@ -34,7 +34,6 @@ def download_video():
         'outtmpl': output_template,
         'quiet': True,
         'nocheckcertificate': True,
-        'ignoreerrors': True,
     }
 
     # Pass cookiefile if it exists in the root directory
@@ -44,12 +43,15 @@ def download_video():
     if format_type == "mp3":
         ydl_opts['format'] = 'bestaudio/best'
     else:
-        # Fallback sequence: best mp4 -> any combined format -> absolute best fallback
-        ydl_opts['format'] = 'b/best[ext=mp4]/best'
+        # Format 18 is YouTube's standard single-file stream (no merging required)
+        ydl_opts['format'] = '18/best[ext=mp4]/best'
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
+            if not info:
+                return jsonify({"error": "Failed to extract video details"}), 500
+            
             filename = ydl.prepare_filename(info)
 
         base_name = os.path.basename(filename)
