@@ -33,6 +33,8 @@ def download_video():
     ydl_opts = {
         'outtmpl': output_template,
         'quiet': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
     }
 
     # Pass cookiefile if it exists in the root directory
@@ -42,8 +44,8 @@ def download_video():
     if format_type == "mp3":
         ydl_opts['format'] = 'bestaudio/best'
     else:
-        # Use single pre-merged stream format to prevent FFmpeg format errors
-        ydl_opts['format'] = 'best[ext=mp4]/best'
+        # Fallback sequence: best mp4 -> any combined format -> absolute best fallback
+        ydl_opts['format'] = 'b/best[ext=mp4]/best'
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
