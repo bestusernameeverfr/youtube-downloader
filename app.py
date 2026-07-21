@@ -11,6 +11,9 @@ CORS(app)
 DOWNLOAD_DIR = "/tmp/downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# Path to YouTube cookies file
+COOKIE_FILE = os.path.join(os.path.dirname(__file__), "cookies.txt")
+
 @app.route("/")
 def index():
     return send_from_directory('.', 'index.html')
@@ -26,32 +29,25 @@ def download_video():
 
     output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
 
-    # Force yt-dlp to use mobile clients that bypass datacenter IP bot-checks
-    extractor_args = {
-        'youtube': {
-            'player_client': ['mweb', 'ios', 'android']
-        }
+    # Options for yt-dlp
+    ydl_opts = {
+        'outtmpl': output_template,
+        'quiet': True,
     }
 
+    # Pass cookiefile if it exists in the root directory
+    if os.path.exists(COOKIE_FILE):
+        ydl_opts['cookiefile'] = COOKIE_FILE
+
     if format_type == "mp3":
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': output_template,
-            'quiet': True,
-            'extractor_args': extractor_args,
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
+        ydl_opts['format'] = 'bestaudio/best'
+        ydl_opts['postprocessors'] = [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
     else:
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': output_template,
-            'quiet': True,
-            'extractor_args': extractor_args,
-        }
+        ydl_opts['format'] = 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best'
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
