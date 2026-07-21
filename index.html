@@ -203,8 +203,8 @@
         
         <div class="field-wrapper">
             <select id="formatSelect">
-                <option value="mp4">🎬 MP4 Video (High Quality)</option>
-                <option value="mp3">🎵 MP3 Audio (320kbps)</option>
+                <option value="mp4">🎬 MP4 Video (720p)</option>
+                <option value="mp3">🎵 MP3 Audio (192kbps)</option>
             </select>
         </div>
     </div>
@@ -235,38 +235,27 @@ async function startDownload() {
     downloadBtn.style.pointerEvents = "none";
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/download', {
+        // Dynamic path works both locally and on Render
+        const response = await fetch('/api/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, format })
         });
 
-        if (response.ok) {
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = `download.${format}`;
-            if (contentDisposition && contentDisposition.includes('filename=')) {
-                filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
-            }
-            
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+        const data = await response.json();
 
-            statusDiv.innerHTML = "✓ Download complete!";
+        if (response.ok && data.status === "success") {
+            statusDiv.innerHTML = "✓ Processing complete! Starting file download...";
             statusDiv.className = "status-success";
+            
+            // Trigger file transfer via the backend retrieval endpoint
+            window.location.href = `/api/get-file/${encodeURIComponent(data.filename)}`;
         } else {
-            const errorData = await response.json();
-            statusDiv.innerHTML = "✕ Error: " + (errorData.error || "Failed to download");
+            statusDiv.innerHTML = "✕ Error: " + (data.error || "Failed to download");
             statusDiv.className = "status-error";
         }
     } catch (err) {
-        statusDiv.innerHTML = "✕ Error: Server disconnected";
+        statusDiv.innerHTML = "✕ Error: Server disconnected or timed out";
         statusDiv.className = "status-error";
     } finally {
         downloadBtn.style.opacity = "1";
