@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Stream Master</title>
+    <style>
+        :root {
+            --bg-grad-start: #0a0a0f;
+            --bg-grad-end: #161624;
+            --card-bg: rgba(26, 26, 38, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(15, 15, 25, 0.6);
+            --accent-glow: #ff2a5f;
+            --accent-grad: linear-gradient(135deg, #ff2a5f 0%, #ff6b4a 100%);
+            --accent-hover: linear-gradient(135deg, #ff4370 0%, #ff7f62 100%);
+            --text-main: #ffffff;
+            --text-sub: #8e8ea0;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.25s ease;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1a102f 0%, var(--bg-grad-start) 60%, var(--bg-grad-end) 100%);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+                        0 0 40px rgba(255, 42, 95, 0.15);
+            width: 440px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo-container {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 15px auto;
+            background: var(--accent-grad);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(255, 42, 95, 0.4);
+        }
+
+        .logo-container svg {
+            width: 32px;
+            height: 32px;
+            fill: #ffffff;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            margin: 0 0 28px 0;
+            color: var(--text-sub);
+            font-size: 0.88rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .field-wrapper {
+            position: relative;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 15px rgba(255, 42, 95, 0.3);
+            background: rgba(20, 20, 32, 0.8);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-sub);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%238e8ea0' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        select option {
+            background-color: #161624;
+            color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: var(--accent-grad);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 42, 95, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(255, 42, 95, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #status {
+            margin-top: 22px;
+            font-size: 0.9rem;
+            min-height: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-loading { color: #ffd60a; }
+        .status-success { color: #30d158; }
+        .status-error   { color: #ff453a; }
+
+        /* Subtle Spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 214, 10, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffd60a;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-container">
+        <svg viewBox="0 0 24 24">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z"/>
+        </svg>
+    </div>
+
+    <h2>YT Stream Master</h2>
+    <p class="subtitle">Convert & Download High Quality Media</p>
+
+    <div class="input-group">
+        <div class="field-wrapper">
+            <input type="text" id="urlInput" placeholder="Paste YouTube link here..." autocomplete="off">
+        </div>
+        
+        <div class="field-wrapper">
+            <select id="formatSelect">
+                <option value="mp4">🎬 MP4 Video (High Quality)</option>
+                <option value="mp3">🎵 MP3 Audio (320kbps)</option>
+            </select>
+        </div>
+    </div>
+
+    <button id="downloadBtn" onclick="startDownload()">
+        <span>Download Now</span>
+    </button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+async function startDownload() {
+    const url = document.getElementById('urlInput').value.trim();
+    const format = document.getElementById('formatSelect').value;
+    const statusDiv = document.getElementById('status');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    if (!url) {
+        statusDiv.innerHTML = "Please enter a YouTube link!";
+        statusDiv.className = "status-error";
+        return;
+    }
+
+    statusDiv.innerHTML = '<span class="spinner"></span> Processing media... Please wait.';
+    statusDiv.className = "status-loading";
+    downloadBtn.style.opacity = "0.7";
+    downloadBtn.style.pointerEvents = "none";
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, format })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `download.${format}`;
+            if (contentDisposition && contentDisposition.includes('filename=')) {
+                filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            statusDiv.innerHTML = "✓ Download complete!";
+            statusDiv.className = "status-success";
+        } else {
+            const errorData = await response.json();
+            statusDiv.innerHTML = "✕ Error: " + (errorData.error || "Failed to download");
+            statusDiv.className = "status-error";
+        }
+    } catch (err) {
+        statusDiv.innerHTML = "✕ Error: Server disconnected";
+        statusDiv.className = "status-error";
+    } finally {
+        downloadBtn.style.opacity = "1";
+        downloadBtn.style.pointerEvents = "auto";
+    }
+}
+</script>
+
+</body>
+</html>

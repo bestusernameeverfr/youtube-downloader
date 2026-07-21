@@ -1,0 +1,7 @@
+﻿build/
+dist/
+downloads/
+*.exe
+*.spec
+*.mp4
+*.mp3
