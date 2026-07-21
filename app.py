@@ -1,4 +1,5 @@
 import os
+import sys
 import pathlib
 from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
@@ -25,11 +26,19 @@ def download_video():
 
     output_template = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
 
+    # Force yt-dlp to use mobile clients that bypass datacenter IP bot-checks
+    extractor_args = {
+        'youtube': {
+            'player_client': ['mweb', 'ios', 'android']
+        }
+    }
+
     if format_type == "mp3":
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': output_template,
             'quiet': True,
+            'extractor_args': extractor_args,
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
@@ -41,6 +50,7 @@ def download_video():
             'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'outtmpl': output_template,
             'quiet': True,
+            'extractor_args': extractor_args,
         }
 
     try:
